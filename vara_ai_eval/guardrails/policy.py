@@ -1,6 +1,6 @@
+import logging
 import re
 from typing import List
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -12,7 +12,9 @@ class GuardrailPolicy:
     """
 
     def __init__(self, banned_patterns: List[str] = None):
-        self.banned_patterns = [re.compile(p, re.IGNORECASE) for p in (banned_patterns or [])]
+        self.banned_patterns = [
+            re.compile(p, re.IGNORECASE) for p in (banned_patterns or [])
+        ]
 
     def check(self, text: str) -> List[str]:
         """Return list of matched rule descriptions (empty = pass)."""

@@ -21,7 +21,11 @@ logger = logging.getLogger(__name__)
 
 
 class DocumentStore:
-    def __init__(self, embed_fn: Callable[[str], Sequence[float]], index_path: Optional[str] = None):
+    def __init__(
+        self,
+        embed_fn: Callable[[str], Sequence[float]],
+        index_path: Optional[str] = None,
+    ):
         self.embed_fn = embed_fn
         self.index_path = index_path
         self._docs: List[Dict[str, Any]] = []
@@ -76,7 +80,9 @@ class DocumentStore:
             idx = self._faiss.IndexFlatL2(dim)
             idx.add(self._vectors)
             self._index = idx
-            logger.info("Built FAISS index with %d vectors (dim=%d)", len(self._docs), dim)
+            logger.info(
+                "Built FAISS index with %d vectors (dim=%d)", len(self._docs), dim
+            )
             # Optionally persist
             if self.index_path:
                 try:
@@ -85,11 +91,15 @@ class DocumentStore:
                     meta_path = self.index_path + ".meta"
                     with open(meta_path, "wb") as f:
                         pickle.dump(self._docs, f)
-                    logger.info("Persisted FAISS index and metadata to %s", self.index_path)
+                    logger.info(
+                        "Persisted FAISS index and metadata to %s", self.index_path
+                    )
                 except Exception as e:
                     logger.exception("Failed to persist FAISS index: %s", e)
         else:
-            logger.info("FAISS not available or numpy missing; prepared vectors for linear-scan fallback")
+            logger.info(
+                "FAISS not available or numpy missing; prepared vectors for linear-scan fallback"
+            )
 
     def save(self, path: str) -> None:
         """Persist vectors and docs without relying on FAISS write (fallback)."""
@@ -147,13 +157,15 @@ class DocumentStore:
             if self._np is not None:
                 q = self._np.array(qv, dtype="float32")
                 diffs = self._vectors - q
-                dists = (diffs ** 2).sum(axis=1)
+                dists = (diffs**2).sum(axis=1)
                 idxs = dists.argsort()[:k]
                 return [self._docs[int(i)] for i in idxs.tolist()]
             # pure-python fallback
             q = [float(x) for x in qv]
+
             def l2(a, b):
                 return sum((ai - bi) ** 2 for ai, bi in zip(a, b))
+
             dists = [l2(v, q) for v in self._vectors]
             idxs = sorted(range(len(dists)), key=lambda i: dists[i])[:k]
             return [self._docs[i] for i in idxs]

@@ -1,5 +1,5 @@
-from typing import List, Dict
 import logging
+from typing import Dict, List
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +30,12 @@ class Evaluator:
             return 0.5
         unknown = [w for w in rsp_words if w not in doc_words]
         score = min(1.0, len(unknown) / max(1, len(rsp_words)))
-        logger.debug("Hallucination heuristic: %d unknown / %d total -> %f", len(unknown), len(rsp_words), score)
+        logger.debug(
+            "Hallucination heuristic: %d unknown / %d total -> %f",
+            len(unknown),
+            len(rsp_words),
+            score,
+        )
         return score
 
     def grounding_score(self, response: str, docs: List[str]) -> float:
@@ -50,7 +55,12 @@ class Evaluator:
             return 0.0
         overlap = rsp_words.intersection(doc_words)
         score = len(overlap) / len(rsp_words)
-        logger.debug("Grounding heuristic: %d overlap / %d total -> %f", len(overlap), len(rsp_words), score)
+        logger.debug(
+            "Grounding heuristic: %d overlap / %d total -> %f",
+            len(overlap),
+            len(rsp_words),
+            score,
+        )
         return score
 
     def citation_alignment_score(self, response: str, docs: List[Dict]) -> float:
@@ -98,7 +108,9 @@ class Evaluator:
         sents = [s.strip() for s in re.split(r"(?<=[.!?])\s+", response) if s.strip()]
         if not sents:
             return 0.0
-        doc_text = "\n".join(d.get("text", "") if isinstance(d, dict) else d for d in (docs or []))
+        doc_text = "\n".join(
+            d.get("text", "") if isinstance(d, dict) else d for d in (docs or [])
+        )
         matched = 0
         for s in sents:
             if s and s in doc_text:
@@ -113,4 +125,9 @@ class Evaluator:
         # accept docs as dicts or list of strings
         citation = self.citation_alignment_score(response, docs if docs else [])
         exact = self.exactness_score(response, docs if docs else [])
-        return {"hallucination": h, "grounding": g, "citation_alignment": citation, "exactness": exact}
+        return {
+            "hallucination": h,
+            "grounding": g,
+            "citation_alignment": citation,
+            "exactness": exact,
+        }

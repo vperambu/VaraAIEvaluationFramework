@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional
 
@@ -10,7 +11,9 @@ class BaseLLM(ABC):
     """
 
     @abstractmethod
-    def generate(self, prompt: str, *, metadata: Optional[Dict[str, Any]] = None) -> str:
+    def generate(
+        self, prompt: str, *, metadata: Optional[Dict[str, Any]] = None
+    ) -> str:
         raise NotImplementedError()
 
 
@@ -24,7 +27,9 @@ class SimpleStubLLM(BaseLLM):
     def __init__(self, seed: int = 42):
         self.seed = seed
 
-    def generate(self, prompt: str, *, metadata: Optional[Dict[str, Any]] = None) -> str:
+    def generate(
+        self, prompt: str, *, metadata: Optional[Dict[str, Any]] = None
+    ) -> str:
         # Deterministic echo with seed-based stable suffix for tests
         suffix = f" [stub-seed={self.seed}]"
         return (prompt or "") + suffix

@@ -16,8 +16,8 @@ ggml, or custom runtimes) by adding them to `_init_backend`.
 """
 from __future__ import annotations
 
-from typing import Optional, Dict, Any
 import logging
+from typing import Any, Dict, Optional
 
 from .base import BaseLLM, SimpleStubLLM
 
@@ -31,13 +31,22 @@ class LlamaAdapter(BaseLLM):
     - Deterministic generation is attempted by seeding the RNG.
     """
 
-    def __init__(self, model_path: str, device: str = "cpu", seed: int = 42,
-                 backend: Optional[str] = None, generation_kwargs: Optional[Dict[str, Any]] = None):
+    def __init__(
+        self,
+        model_path: str,
+        device: str = "cpu",
+        seed: int = 42,
+        backend: Optional[str] = None,
+        generation_kwargs: Optional[Dict[str, Any]] = None,
+    ):
         self.model_path = model_path
         self.device = device
         self.seed = seed
         self.backend = backend
-        self.generation_kwargs = generation_kwargs or {"max_new_tokens": 128, "do_sample": False}
+        self.generation_kwargs = generation_kwargs or {
+            "max_new_tokens": 128,
+            "do_sample": False,
+        }
 
         self._model = None
         self._tokenizer = None
@@ -57,8 +66,9 @@ class LlamaAdapter(BaseLLM):
 
         # Try transformers if available or requested
         try:
-            from transformers import AutoTokenizer, AutoModelForCausalLM  # type: ignore
             import torch  # type: ignore
+            from transformers import AutoModelForCausalLM, AutoTokenizer  # type: ignore
+
             tried_transformers = True
         except Exception:
             if self.backend == "transformers":
@@ -67,19 +77,31 @@ class LlamaAdapter(BaseLLM):
 
         if tried_transformers:
             try:
-                from transformers import AutoTokenizer, AutoModelForCausalLM  # type: ignore
                 import torch  # type: ignore
+                from transformers import (  # type: ignore
+                    AutoModelForCausalLM,
+                    AutoTokenizer,
+                )
 
                 # Require local files only to avoid network calls during CI
-                self._tokenizer = AutoTokenizer.from_pretrained(self.model_path, local_files_only=True)
-                self._model = AutoModelForCausalLM.from_pretrained(self.model_path, local_files_only=True)
+                self._tokenizer = AutoTokenizer.from_pretrained(
+                    self.model_path, local_files_only=True
+                )
+                self._model = AutoModelForCausalLM.from_pretrained(
+                    self.model_path, local_files_only=True
+                )
                 # Move model to device if possible
                 try:
                     self._model.to(torch.device(self.device))
                 except Exception:
-                    logger.debug("Could not move model to device %s; continuing on default device", self.device)
+                    logger.debug(
+                        "Could not move model to device %s; continuing on default device",
+                        self.device,
+                    )
                 self._backend = "transformers"
-                logger.info("LlamaAdapter: initialized transformers backend (local files only)")
+                logger.info(
+                    "LlamaAdapter: initialized transformers backend (local files only)"
+                )
                 return
             except Exception as e:
                 logger.warning("Transformers backend initialization failed: %s", e)
@@ -90,7 +112,9 @@ class LlamaAdapter(BaseLLM):
             "or implement an alternate backend (e.g., llama.cpp) and set `backend` accordingly."
         )
 
-    def generate(self, prompt: str, *, metadata: Optional[Dict[str, Any]] = None) -> str:
+    def generate(
+        self, prompt: str, *, metadata: Optional[Dict[str, Any]] = None
+    ) -> str:
         if self._model is None or self._tokenizer is None:
             logger.warning("LlamaAdapter not initialized; using SimpleStubLLM fallback")
             return SimpleStubLLM(seed=self.seed).generate(prompt)

@@ -1,5 +1,5 @@
-from typing import List, Optional, Sequence, Any
 import logging
+from typing import Any, List, Optional, Sequence
 
 logger = logging.getLogger(__name__)
 
@@ -15,7 +15,13 @@ class FaissRetriever:
     Otherwise it returns placeholder ids (same behavior as before).
     """
 
-    def __init__(self, embed_fn, index: Optional[object] = None, index_path: Optional[str] = None, docstore: Optional[Any] = None):
+    def __init__(
+        self,
+        embed_fn,
+        index: Optional[object] = None,
+        index_path: Optional[str] = None,
+        docstore: Optional[Any] = None,
+    ):
         self.embed_fn = embed_fn
         self.index = index
         self.index_path = index_path
@@ -23,7 +29,9 @@ class FaissRetriever:
         try:
             import faiss  # optional dependency
         except Exception:
-            logger.warning("FAISS not available; FaissRetriever will fallback to CPU scan.")
+            logger.warning(
+                "FAISS not available; FaissRetriever will fallback to CPU scan."
+            )
             self._faiss = None
         else:
             self._faiss = faiss
@@ -34,6 +42,7 @@ class FaissRetriever:
         dim = len(vectors[0]) if vectors else 0
         idx = self._faiss.IndexFlatL2(dim)
         import numpy as np
+
         idx.add(np.array(vectors, dtype="float32"))
         self.index = idx
         return idx
@@ -54,6 +63,7 @@ class FaissRetriever:
         if self._faiss and self.index is not None:
             try:
                 import numpy as np
+
                 q = np.array([vec], dtype="float32")
                 D, I = self.index.search(q, k)
                 indices = I[0].tolist()

@@ -10,7 +10,7 @@ Usage:
 
 import asyncio
 import logging
-from typing import Dict, Any, Optional, List
+from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -31,11 +31,16 @@ class PlaywrightHarness:
         """Initialize Playwright and browser."""
         try:
             from playwright.async_api import async_playwright
+
             self._playwright = await async_playwright().start()
             if self.browser == "chromium":
-                self._browser = await self._playwright.chromium.launch(headless=self.headless)
+                self._browser = await self._playwright.chromium.launch(
+                    headless=self.headless
+                )
             elif self.browser == "firefox":
-                self._browser = await self._playwright.firefox.launch(headless=self.headless)
+                self._browser = await self._playwright.firefox.launch(
+                    headless=self.headless
+                )
             else:
                 raise ValueError(f"Unsupported browser: {self.browser}")
         except Exception as e:
@@ -102,7 +107,9 @@ class PlaywrightHarness:
             "response_length": len(response_text),
             "has_response": has_response,
             "contains_ai": contains_ai,
-            "response_preview": response_text[:200] + "..." if len(response_text) > 200 else response_text
+            "response_preview": response_text[:200] + "..."
+            if len(response_text) > 200
+            else response_text,
         }
 
 

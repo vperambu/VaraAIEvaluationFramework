@@ -17,7 +17,7 @@ import logging
 import shutil
 import subprocess
 import tempfile
-from typing import Optional, Dict, Any, List
+from typing import Any, Dict, List, Optional
 
 from .base import BaseLLM, SimpleStubLLM
 
@@ -25,7 +25,15 @@ logger = logging.getLogger(__name__)
 
 
 class LlamaCppAdapter(BaseLLM):
-    def __init__(self, model_path: str, binary_path: Optional[str] = None, *, seed: int = 42, timeout: int = 30, extra_args: Optional[List[str]] = None):
+    def __init__(
+        self,
+        model_path: str,
+        binary_path: Optional[str] = None,
+        *,
+        seed: int = 42,
+        timeout: int = 30,
+        extra_args: Optional[List[str]] = None,
+    ):
         self.model_path = model_path
         self.binary_path = binary_path or "main"
         self.seed = seed
@@ -40,7 +48,9 @@ class LlamaCppAdapter(BaseLLM):
             path = shutil.which(self.binary_path)
             logger.info("LlamaCppAdapter: using binary at %s", path)
             return path
-        logger.warning("LlamaCppAdapter: binary '%s' not found on PATH", self.binary_path)
+        logger.warning(
+            "LlamaCppAdapter: binary '%s' not found on PATH", self.binary_path
+        )
         return None
 
     def _try_invocations(self, prompt: str) -> Optional[str]:
@@ -52,12 +62,18 @@ class LlamaCppAdapter(BaseLLM):
             candidates = []
 
             # Common patterns: --model/--prompt, -m/-p, -m -f (file), --model --file
-            candidates.append([self._binary, "--model", self.model_path, "--prompt", prompt])
+            candidates.append(
+                [self._binary, "--model", self.model_path, "--prompt", prompt]
+            )
             candidates.append([self._binary, "-m", self.model_path, "-p", prompt])
-            candidates.append([self._binary, "--model", self.model_path, "--prompt-file", tf.name])
+            candidates.append(
+                [self._binary, "--model", self.model_path, "--prompt-file", tf.name]
+            )
             candidates.append([self._binary, "-m", self.model_path, "-f", tf.name])
             # Some builds support interactive with stdin
-            candidates.append([self._binary, "--model", self.model_path, "--interactive-start"])
+            candidates.append(
+                [self._binary, "--model", self.model_path, "--interactive-start"]
+            )
 
             # Append any extra args user supplied
             if self.extra_args:
@@ -67,30 +83,58 @@ class LlamaCppAdapter(BaseLLM):
                 try:
                     if "-f" in cmd or "--prompt-file" in cmd:
                         # prompt passed via file; run without stdin
-                        logger.debug("LlamaCppAdapter: attempting command: %s", " ".join(cmd))
-                        proc = subprocess.run(cmd, capture_output=True, timeout=self.timeout, check=False)
+                        logger.debug(
+                            "LlamaCppAdapter: attempting command: %s", " ".join(cmd)
+                        )
+                        proc = subprocess.run(
+                            cmd, capture_output=True, timeout=self.timeout, check=False
+                        )
                     else:
                         # send prompt via stdin for interactive-style invocations
-                        logger.debug("LlamaCppAdapter: attempting command (stdin): %s", " ".join(cmd))
-                        proc = subprocess.run(cmd, input=prompt.encode("utf-8"), capture_output=True, timeout=self.timeout, check=False)
+                        logger.debug(
+                            "LlamaCppAdapter: attempting command (stdin): %s",
+                            " ".join(cmd),
+                        )
+                        proc = subprocess.run(
+                            cmd,
+                            input=prompt.encode("utf-8"),
+                            capture_output=True,
+                            timeout=self.timeout,
+                            check=False,
+                        )
 
                     out = proc.stdout.decode("utf-8", errors="ignore").strip()
                     err = proc.stderr.decode("utf-8", errors="ignore").strip()
                     if proc.returncode == 0 and out:
-                        logger.info("LlamaCppAdapter: invocation succeeded with command: %s", cmd[:3])
+                        logger.info(
+                            "LlamaCppAdapter: invocation succeeded with command: %s",
+                            cmd[:3],
+                        )
                         return out
                     else:
-                        logger.debug("LlamaCppAdapter: command failed (rc=%s). stderr=%s", proc.returncode, err)
+                        logger.debug(
+                            "LlamaCppAdapter: command failed (rc=%s). stderr=%s",
+                            proc.returncode,
+                            err,
+                        )
                 except FileNotFoundError:
-                    logger.debug("LlamaCppAdapter: binary not found for command: %s", cmd[0])
+                    logger.debug(
+                        "LlamaCppAdapter: binary not found for command: %s", cmd[0]
+                    )
                 except subprocess.TimeoutExpired:
-                    logger.warning("LlamaCppAdapter: invocation timed out for command: %s", cmd[:3])
+                    logger.warning(
+                        "LlamaCppAdapter: invocation timed out for command: %s", cmd[:3]
+                    )
                 except Exception as e:
-                    logger.exception("LlamaCppAdapter: unexpected error invoking command: %s", e)
+                    logger.exception(
+                        "LlamaCppAdapter: unexpected error invoking command: %s", e
+                    )
 
         return None
 
-    def generate(self, prompt: str, *, metadata: Optional[Dict[str, Any]] = None) -> str:
+    def generate(
+        self, prompt: str, *, metadata: Optional[Dict[str, Any]] = None
+    ) -> str:
         # If no binary available, fallback immediately
         if not self._binary:
             logger.warning("LlamaCppAdapter: no binary available; falling back to stub")
@@ -105,7 +149,9 @@ class LlamaCppAdapter(BaseLLM):
 
             out = self._try_invocations(prompt)
             if out is None:
-                logger.warning("LlamaCppAdapter: all invocations failed; using stub fallback")
+                logger.warning(
+                    "LlamaCppAdapter: all invocations failed; using stub fallback"
+                )
                 return SimpleStubLLM(seed=self.seed).generate(prompt)
             return out
         except Exception as e:
