@@ -1,0 +1,7 @@
+faiss-cpu
+sentence-transformers
+transformers
+playwright
+numpy
+pytest
+typing-extensions
