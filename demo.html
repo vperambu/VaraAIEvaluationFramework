@@ -2,28 +2,177 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Simple LLM App Demo</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vara AI Evaluation Demo</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .chat-container {
+            width: 100%;
+            max-width: 600px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 80vh;
+        }
+        .chat-header {
+            background: #667eea;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: #f8f9fa;
+        }
+        .message {
+            margin-bottom: 15px;
+            display: flex;
+        }
+        .message.user {
+            justify-content: flex-end;
+        }
+        .message.bot {
+            justify-content: flex-start;
+        }
+        .message-bubble {
+            max-width: 70%;
+            padding: 12px 18px;
+            border-radius: 18px;
+            font-size: 1em;
+            line-height: 1.4;
+        }
+        .message.user .message-bubble {
+            background: #667eea;
+            color: white;
+        }
+        .message.bot .message-bubble {
+            background: white;
+            color: #333;
+            border: 1px solid #e9ecef;
+        }
+        .chat-input {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #e9ecef;
+            display: flex;
+        }
+        .chat-input input {
+            flex: 1;
+            padding: 12px 18px;
+            border: 2px solid #e9ecef;
+            border-radius: 25px;
+            font-size: 1em;
+            outline: none;
+        }
+        .chat-input input:focus {
+            border-color: #667eea;
+        }
+        .chat-input button {
+            margin-left: 10px;
+            padding: 12px 24px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .chat-input button:hover {
+            background: #5a6fd8;
+        }
+        .typing {
+            display: none;
+            font-style: italic;
+            color: #666;
+            margin-left: 20px;
+        }
+    </style>
 </head>
 <body>
-    <h1>LLM Query Demo</h1>
-    <form id="query-form">
-        <label for="query">Ask a question:</label>
-        <input type="text" name="query" id="query" required>
-        <button type="submit">Submit</button>
-    </form>
-    <div id="response" style="margin-top: 20px; border: 1px solid #ccc; padding: 10px;"></div>
+    <div class="chat-container">
+        <div class="chat-header">
+            🤖 Vara AI Evaluation Demo
+        </div>
+        <div class="chat-messages" id="chat-messages">
+            <div class="message bot">
+                <div class="message-bubble">Hello! I'm Vara, an AI evaluation assistant. Ask me anything about AI, privacy, or our services!</div>
+            </div>
+        </div>
+        <div class="chat-input">
+            <input type="text" id="query" placeholder="Type your question here..." required>
+            <button id="submit-btn">Send</button>
+        </div>
+        <div class="typing" id="typing">Vara is typing...</div>
+    </div>
 
     <script>
-        document.getElementById('query-form').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            const query = document.getElementById('query').value;
-            const responseDiv = document.getElementById('response');
-            responseDiv.textContent = 'Processing...';
+        const messagesContainer = document.getElementById('chat-messages');
+        const queryInput = document.getElementById('query');
+        const submitBtn = document.getElementById('submit-btn');
+        const typingIndicator = document.getElementById('typing');
 
-            // Simulate LLM response (replace with real API call)
+        function addMessage(text, isUser = false) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user' : 'bot'}`;
+            messageDiv.innerHTML = `<div class="message-bubble">${text}</div>`;
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function getResponse(query) {
+            const q = query.toLowerCase().trim();
+            if (q.includes('privacy') || q.includes('policy')) {
+                return "Regarding privacy: We take your data security seriously. All personal information is encrypted and never shared with third parties. Our privacy policy ensures compliance with GDPR and other regulations.";
+            } else if (q.includes('ai') || q.includes('artificial intelligence')) {
+                return "Artificial Intelligence refers to machines performing tasks that typically require human intelligence, such as learning, reasoning, and problem-solving. I'm an example of an AI assistant built for evaluation purposes.";
+            } else if (q.includes('chatbot') || q.includes('bot')) {
+                return "Yes, I'm a chatbot! I'm designed to demonstrate AI evaluation frameworks. I can answer questions about AI, privacy, and more. What would you like to know?";
+            } else if (q.includes('hello') || q.includes('hi')) {
+                return "Hello! How can I help you today? Feel free to ask about AI, privacy policies, or anything else!";
+            } else {
+                return `That's an interesting question about "${query}". While I'm a demo AI, I can tell you that AI systems like me are trained on vast amounts of data to provide helpful responses. What else would you like to explore?`;
+            }
+        }
+
+        function handleSubmit() {
+            const query = queryInput.value.trim();
+            if (!query) return;
+
+            addMessage(query, true);
+            queryInput.value = '';
+
+            typingIndicator.style.display = 'block';
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
             setTimeout(() => {
-                responseDiv.textContent = `AI Response: ${query} is a great question! Artificial Intelligence refers to machines performing tasks that typically require human intelligence.`;
-            }, 1000);
+                typingIndicator.style.display = 'none';
+                const response = getResponse(query);
+                addMessage(response);
+            }, 1500); // Simulate typing delay
+        }
+
+        submitBtn.addEventListener('click', handleSubmit);
+        queryInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                handleSubmit();
+            }
         });
     </script>
 </body>

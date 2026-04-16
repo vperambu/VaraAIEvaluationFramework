@@ -84,20 +84,33 @@ class PlaywrightHarness:
             await self._teardown()
 
     async def _example_form_test(self, page, **kwargs) -> Dict[str, Any]:
-        """Example test: Fill a form and submit, check response.
+        """Example test: Send a message in the chat and check response.
 
-        Assumes a simple HTML form at the URL.
+        Assumes a chat interface at the URL.
         """
-        # Wait for form elements
-        await page.wait_for_selector("input[name='query']", timeout=5000)
-        await page.fill("input[name='query']", "What is AI?")
+        # Wait for chat input
+        await page.wait_for_selector("#query", timeout=5000)
+        await page.fill("#query", "What is AI?")
+
+        # Count messages before submit
+        initial_messages = await page.query_selector_all(".message")
+        initial_count = len(initial_messages)
 
         # Submit
-        await page.click("button[type='submit']")
+        await page.click("#submit-btn")
 
-        # Wait for response
-        await page.wait_for_selector("#response", timeout=10000)
-        response_text = await page.inner_text("#response")
+        # Wait for new message to appear
+        await page.wait_for_function(
+            f"() => document.querySelectorAll('.message').length > {initial_count}",
+            timeout=5000,
+        )
+
+        # Get the last bot message
+        bot_messages = await page.query_selector_all(".message.bot")
+        if bot_messages:
+            response_text = await bot_messages[-1].inner_text()
+        else:
+            response_text = ""
 
         # Basic checks
         has_response = len(response_text.strip()) > 0
@@ -107,9 +120,7 @@ class PlaywrightHarness:
             "response_length": len(response_text),
             "has_response": has_response,
             "contains_ai": contains_ai,
-            "response_preview": response_text[:200] + "..."
-            if len(response_text) > 200
-            else response_text,
+            "response_preview": response_text[:200] + "..." if len(response_text) > 200 else response_text
         }
 
 
